@@ -12,7 +12,9 @@ import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
@@ -23,7 +25,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean mIsBound = false;
 
     private TextView tvTime;
-    private Button btnReset;
+    private EditText etFreq;
+    private Button btnReset, btnStart, btnStop;
     final Messenger mMessenger = new Messenger(new IncomingEventHandler());
 
 
@@ -43,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             mService = new Messenger(service);
+            mIsBound = true;
             Log.d(TAG, "onServiceConnected: ");
             try {
                 Message msg = Message.obtain(null, TimeCountService.MSG_REGISTER_CLIENT);
@@ -57,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceDisconnected(ComponentName className) {
             // This is called when the connection with the service has been unexpectedly disconnected - process crashed.
             mService = null;
+            mIsBound = false;
             Log.d(TAG, "onServiceDisconnected: ");
         }
     };
@@ -70,22 +75,58 @@ public class MainActivity extends AppCompatActivity {
 
         tvTime = findViewById(R.id.tv_time);
         btnReset = findViewById(R.id.btn_reset);
+        etFreq = findViewById(R.id.et_freq);
+        etFreq.setText("60");
 
-        startService(new Intent(MainActivity.this, TimeCountService.class));
+        btnStart = findViewById(R.id.btn_start);
+        btnStop = findViewById(R.id.btn_stop);
+
+        btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doBindService();
+            }
+        });
+
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doUnbindService();
+            }
+        });
+
+        btnReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // sending message freq
+                int rate = Integer.valueOf(etFreq.getText().toString());
+                if (rate <= 0) {
+                    return;
+                }
+                if (mMessenger != null && mService != null) {
+
+                    try {
+                        Message msg = Message.obtain(null, TimeCountService.MSG_SET_FREQ);
+                        msg.arg1 = Math.round(1000 * 60 / rate);
+                        msg.replyTo = mMessenger;
+                        mService.send(msg);
+                    } catch (RemoteException e) {
+                        // In this case the service has crashed before we could even do anything with it
+                    }
+                }
+            }
+        });
 
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        //bind to TimeCountService
-        checkIfServiceIsRunning();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        doUnbindService();
     }
 
     @Override
@@ -99,16 +140,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void checkIfServiceIsRunning() {
-        //If the service is running when the activity starts, we want to automatically bind to it.
-        if (TimeCountService.isRunning()) {
-            doBindService();
-        }
-    }
 
     void doBindService() {
         bindService(new Intent(this, TimeCountService.class), mConnection, Context.BIND_AUTO_CREATE);
-        mIsBound = true;
         Log.d(TAG, "doBindService: ");
         
     }

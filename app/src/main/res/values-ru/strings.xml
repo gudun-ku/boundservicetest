@@ -2,4 +2,6 @@
 <resources>
     <string name="lbl_service_reset">Перезапуск</string>
     <string name="txt_tv_time">Текущее время:</string>
+    <string name="lbl_service_unbind">Unbind service</string>
+    <string name="lbl_service_bind">Bind service</string>
 </resources>

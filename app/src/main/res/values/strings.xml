@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">BoundServiceTest</string>
+    <string name="app_name" translatable="false">BoundServiceTest</string>
     <string name="lbl_service_reset">reset service</string>
     <string name="txt_tv_time">current time is:</string>
+    <string name="lbl_service_unbind">Unbind service</string>
+    <string name="lbl_service_bind">Bind service</string>
 </resources>
